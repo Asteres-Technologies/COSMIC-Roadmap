@@ -4,9 +4,8 @@ Roadmap Data Combiner Module
 This module provides functionality to combine dependency and readiness data from CSV files
 into a unified data structure for analysis and visualization.
 """
+from typing import Dict, Tuple, Any
 import pandas as pd
-import pprint
-from typing import Dict, Tuple, Any, Optional
 
 
 def create_combined_roadmap(dependency_file: str, readiness_file: str) -> Dict[str, Dict[str, Tuple[Any, Any]]]:
@@ -74,79 +73,3 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str) -> Dict[s
                     combined_data[mission][capability] = (dependency_value, readiness_value)
 
     return combined_data
-
-
-def print_roadmap_sample(roadmap_data: Dict[str, Dict[str, Tuple[Any, Any]]], 
-                        mission_key: Optional[str] = None) -> None:
-    """
-    Pretty-prints a sample of the roadmap data for verification purposes.
-
-    Args:
-        roadmap_data (dict): The combined roadmap data structure.
-        mission_key (str, optional): Specific mission to print. If None, prints the first mission.
-    """
-    if not roadmap_data:
-        print("No roadmap data available to display.")
-        return
-
-    if mission_key is None:
-        mission_key = list(roadmap_data.keys())[0]
-    
-    if mission_key not in roadmap_data:
-        print(f"Mission '{mission_key}' not found in roadmap data.")
-        return
-
-    print("--- Combined Roadmap Data (Sample) ---")
-    print(f"\nData for Mission: '{mission_key}'")
-    pprint.pprint(roadmap_data[mission_key])
-
-
-def print_full_roadmap(roadmap_data: Dict[str, Dict[str, Tuple[Any, Any]]]) -> None:
-    """
-    Pretty-prints the entire roadmap data structure.
-
-    Args:
-        roadmap_data (dict): The combined roadmap data structure.
-    """
-    if not roadmap_data:
-        print("No roadmap data available to display.")
-        return
-
-    print("--- Full Combined Roadmap Data ---")
-    pprint.pprint(roadmap_data)
-
-
-def main(dependency_filename: str = 'Roadmap-dependency.csv', 
-         readiness_filename: str = 'Roadmap-readiness.csv') -> Dict[str, Dict[str, Tuple[Any, Any]]]:
-    """
-    Main function to execute the roadmap combination process.
-
-    Args:
-        dependency_filename (str): Name of the dependency CSV file.
-        readiness_filename (str): Name of the readiness CSV file.
-
-    Returns:
-        dict: The combined roadmap data structure.
-    """
-    # Generate the combined data structure.
-    roadmap_data = create_combined_roadmap(dependency_filename, readiness_filename)
-
-    # --- Verification ---
-    # Pretty-print the data for the first mission as a sample to verify the output.
-    if roadmap_data:
-        print_roadmap_sample(roadmap_data)
-        
-        # To print the entire dictionary, you can uncomment the following line:
-        # print_full_roadmap(roadmap_data)
-    else:
-        print("Could not generate roadmap data. Please check the input files and error messages.")
-    
-    return roadmap_data
-
-
-if __name__ == "__main__":
-    # Define the names of your input files.
-    dependency_filename = 'Roadmap-dependency.csv'
-    readiness_filename = 'Roadmap-readiness.csv'
-    
-    main(dependency_filename, readiness_filename)
