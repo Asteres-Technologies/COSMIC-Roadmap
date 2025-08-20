@@ -4,7 +4,7 @@ Python code to generate potential roadmaps and development paths for self-sustai
 ## Setup Instructions
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.13 or higher (might work on lower version, but only tested on 3.13)
 - Git
 
 ### Virtual Environment Setup
