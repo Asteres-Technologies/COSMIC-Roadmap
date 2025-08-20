@@ -1,0 +1,16 @@
+# Core data processing dependencies
+pandas>=2.0.0
+
+# Additional dependencies that might be useful for the roadmap project
+numpy>=1.24.0
+
+# For visualization (if needed later)
+matplotlib>=3.7.0
+plotly>=5.14.0
+
+# For testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# For data validation and type checking
+pydantic>=2.0.0

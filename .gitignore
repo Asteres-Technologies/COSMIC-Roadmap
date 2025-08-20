@@ -205,3 +205,50 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# COSMIC Roadmap - Sensitive Data
+# CSV input files (may contain sensitive information)
+*.csv
+data/raw/*.csv
+data/processed/*.csv
+Roadmap-dependency.csv
+Roadmap-readiness.csv
+
+# Output files and generated data
+data/processed/*
+data/output/
+outputs/
+results/
+*.xlsx
+*.xls
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# Configuration files that might contain sensitive info
+config.ini
+settings.json
+secrets.json
+.secrets
+credentials.*
+
+# Data analysis outputs
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+plots/
+figures/
+charts/
