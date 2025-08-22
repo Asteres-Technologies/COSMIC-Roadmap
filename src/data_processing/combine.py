@@ -95,17 +95,15 @@ def build_combined_structure(dependency_df: pd.DataFrame, readiness_df: pd.DataF
         Dict[str, Dict[str, Tuple[Any, Any]]]: Combined data structure.
                 Structure: {mission: {capability: (dependency, readiness)}}
     """
+    # Use pandas .stack() for efficient iteration
+    dep_stack = dependency_df.stack()
+    read_stack = readiness_df.stack()
     combined_data = {}
-    
-    for mission in dependency_df.columns:
-        if pd.notna(mission) and mission:
+    for (capability, mission), dep_value in dep_stack.items():
+        read_value = read_stack.get((capability, mission), None)
+        if mission not in combined_data:
             combined_data[mission] = {}
-            for capability in dependency_df.index:
-                if pd.notna(capability) and capability:
-                    dependency_value = dependency_df.loc[capability, mission]
-                    readiness_value = readiness_df.loc[capability, mission]
-                    combined_data[mission][capability] = (dependency_value, readiness_value)
-
+        combined_data[mission][capability] = (dep_value, read_value)
     return combined_data
 
 

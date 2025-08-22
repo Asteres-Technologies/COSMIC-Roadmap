@@ -5,6 +5,7 @@ from src.visualization.text import (
     print_roadmap_summary, 
     print_capabilities_analysis
 )
+from src.visualization.heatmap import plot_heatmap
 from src.data_processing.combine import create_combined_roadmap
 from src.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
@@ -16,7 +17,8 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
          full_roadmap: bool = False,
          table_format: bool = False,
          summary: bool = False,
-         capabilities: bool = False) -> RoadmapData:
+         capabilities: bool = False,
+         heatmap: bool = False) -> RoadmapData:
     """
     Main function to execute the roadmap combination process.
 
@@ -27,6 +29,7 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
         table_format (bool): Whether to print in table format.
         summary (bool): Whether to print summary information.
         capabilities (bool): Whether to print capabilities analysis.
+        heatmap (bool): Whether to show a heatmap of roadmap dependency levels.
 
     Returns:
         RoadmapData: The combined roadmap data structure.
@@ -42,6 +45,8 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
             print_full_roadmap(roadmap_data)
         elif table_format:
             print_roadmap_table(roadmap_data)
+        elif heatmap:
+            plot_heatmap(roadmap_data)
         else:
             print_roadmap_sample(roadmap_data)
     else:
@@ -61,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--table", action="store_true", help="Print roadmap data in table format.")
     parser.add_argument("--summary", action="store_true", help="Print a summary of the roadmap data.")
     parser.add_argument("--capabilities", action="store_true", help="Print analysis of all capabilities.")
+    parser.add_argument("--heatmap", action="store_true", help="Show a heatmap of roadmap dependency levels.")
     args = parser.parse_args()
 
-    main(args.dependency, args.readiness, args.full, args.table, args.summary, args.capabilities)
+    main(args.dependency, args.readiness, args.full, args.table, args.summary, args.capabilities, args.heatmap)
