@@ -6,6 +6,7 @@ from src.visualization.text import (
     print_capabilities_analysis
 )
 from src.data_processing.combine import create_combined_roadmap
+from src.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
 from argparse import ArgumentParser
 from os import path
@@ -15,7 +16,7 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
          full_roadmap: bool = False,
          table_format: bool = False,
          summary: bool = False,
-         capabilities: bool = False) -> Dict[str, Dict[str, Tuple[Any, Any]]]:
+         capabilities: bool = False) -> RoadmapData:
     """
     Main function to execute the roadmap combination process.
 
@@ -28,13 +29,11 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
         capabilities (bool): Whether to print capabilities analysis.
 
     Returns:
-        dict: The combined roadmap data structure.
+        RoadmapData: The combined roadmap data structure.
     """
-    # Generate the combined data structure.
     roadmap_data = create_combined_roadmap(dependency_filename, readiness_filename)
 
-    # --- Display Results ---
-    if roadmap_data:
+    if roadmap_data.missions:
         if summary:
             print_roadmap_summary(roadmap_data)
         elif capabilities:
