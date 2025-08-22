@@ -4,9 +4,9 @@ Roadmap Data Combiner Module
 This module provides functionality to combine dependency and readiness data from CSV files
 into a unified data structure for analysis and visualization.
 """
+from me_roadmap.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
 import pandas as pd
-from .models import RoadmapData
 
 
 def load_csv_files(dependency_file: str, readiness_file: str) -> Tuple[pd.DataFrame, pd.DataFrame]:

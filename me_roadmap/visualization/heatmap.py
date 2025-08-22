@@ -5,7 +5,7 @@ This module provides functions to generate heatmaps for dependency and readiness
 across missions and capabilities.
 """
 from matplotlib.colors import LinearSegmentedColormap
-from ..data_processing.models import RoadmapData
+from me_roadmap.data_processing.models import RoadmapData
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np

@@ -1,13 +1,13 @@
-from src.visualization.text import (
+from me_roadmap.visualization.text import (
     print_roadmap_sample, 
     print_full_roadmap, 
     print_roadmap_table, 
     print_roadmap_summary, 
     print_capabilities_analysis
 )
-from src.visualization.heatmap import plot_heatmap
-from src.data_processing.combine import create_combined_roadmap
-from src.data_processing.models import RoadmapData
+from me_roadmap.visualization.heatmap import plot_heatmap
+from me_roadmap.data_processing.combine import create_combined_roadmap
+from me_roadmap.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
 from argparse import ArgumentParser
 from os import path

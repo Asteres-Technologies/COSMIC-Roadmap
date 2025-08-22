@@ -2,9 +2,9 @@
 A module to support text or console based visualization of roadmap data.
 Provides clean, readable formatting for debugging and verification purposes.
 """
+from me_roadmap.data_processing.models import RoadmapData
 from typing import Optional
 import pandas as pd
-from ..data_processing.models import RoadmapData
 
 
 def format_value(value) -> str:
