@@ -6,12 +6,11 @@ across missions and capabilities.
 """
 from matplotlib.colors import LinearSegmentedColormap
 from me_roadmap.data_processing.models import RoadmapData
+from me_roadmap.visualization import PRIMARY_COLOR, SECONDARY_COLOR
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np
 import os
-
-from matplotlib.colors import LinearSegmentedColormap
 
 def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", mission_keys: Optional[list] = None, capability_keys: Optional[list] = None, cmap: str = "YlOrRd"):
     """
@@ -56,7 +55,7 @@ def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", miss
     height = max(min_height, len(capabilities) * 0.7)
     fig, ax = plt.subplots(figsize=(width, height))
     custom_cmap = LinearSegmentedColormap.from_list(
-        "custom_gradient", ["#b8d232", "#231f20"], N=256
+        "custom_gradient", [PRIMARY_COLOR, SECONDARY_COLOR], N=256
     )
     im = ax.imshow(matrix, aspect="auto", cmap=custom_cmap, interpolation="nearest")
     cbar = fig.colorbar(im, ax=ax, label=f"{value_type.title()} Level")
@@ -70,7 +69,7 @@ def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", miss
     fig.subplots_adjust(bottom=0.25, left=0.25)
     fig.tight_layout(rect=[0, 0, 1, 0.97])
 
-    output_dir = os.path.join(os.path.dirname(__file__), '../../data/processed')
+    output_dir = os.path.join(os.path.dirname(__file__), '../../data/processed/heatmap')
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, f"roadmap_{value_type}_heatmap.png")
     fig.savefig(out_path, bbox_inches="tight")

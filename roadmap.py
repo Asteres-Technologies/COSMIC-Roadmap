@@ -6,11 +6,13 @@ from me_roadmap.visualization.text import (
     print_capabilities_analysis
 )
 from me_roadmap.visualization.heatmap import plot_heatmap
+from me_roadmap.visualization.radar import plot_radar_charts
 from me_roadmap.data_processing.combine import create_combined_roadmap
 from me_roadmap.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
 from argparse import ArgumentParser
 from os import path
+import click 
 
 def main(dependency_filename: str = 'Roadmap-dependency.csv', 
          readiness_filename: str = 'Roadmap-readiness.csv',
@@ -18,7 +20,8 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
          table_format: bool = False,
          summary: bool = False,
          capabilities: bool = False,
-         heatmap: bool = False) -> RoadmapData:
+         heatmap: bool = False,
+         radar: bool = False) -> RoadmapData:
     """
     Main function to execute the roadmap combination process.
 
@@ -30,6 +33,7 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
         summary (bool): Whether to print summary information.
         capabilities (bool): Whether to print capabilities analysis.
         heatmap (bool): Whether to show a heatmap of roadmap dependency levels.
+        radar (bool): Whether to show radar charts of roadmap missions and capabilities.
 
     Returns:
         RoadmapData: The combined roadmap data structure.
@@ -47,6 +51,8 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
             print_roadmap_table(roadmap_data)
         elif heatmap:
             plot_heatmap(roadmap_data)
+        elif radar:
+            plot_radar_charts(roadmap_data)
         else:
             print_roadmap_sample(roadmap_data)
     else:
@@ -55,18 +61,25 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
     return roadmap_data
 
 
-if __name__ == "__main__":
-    # Define the names of your input files.
-    default_dependency = './data/raw/Roadmap-dependency.csv'
-    default_readiness = './data/raw/Roadmap-readiness.csv'
-    parser = ArgumentParser(description="Combine and visualize roadmap dependency and readiness data.")
-    parser.add_argument("--dependency", default=default_dependency, help="Path to the dependency CSV file.")
-    parser.add_argument("--readiness", default=default_readiness, help="Path to the readiness CSV file.")
-    parser.add_argument("--full", action="store_true", help="Print the full roadmap instead of a sample.")
-    parser.add_argument("--table", action="store_true", help="Print roadmap data in table format.")
-    parser.add_argument("--summary", action="store_true", help="Print a summary of the roadmap data.")
-    parser.add_argument("--capabilities", action="store_true", help="Print analysis of all capabilities.")
-    parser.add_argument("--heatmap", action="store_true", help="Show a heatmap of roadmap dependency levels.")
-    args = parser.parse_args()
+@click.command()
+@click.option('--dependency', type=click.Path(exists=True), required=True, help='Path to dependency CSV')
+@click.option('--readiness', type=click.Path(exists=True), required=True, help='Path to readiness CSV')
+@click.option('--full', is_flag=True, help='Print the full roadmap instead of a sample.')
+@click.option('--table', is_flag=True, help='Print roadmap data in table format.')
+@click.option('--summary', is_flag=True, help='Print a summary of the roadmap data.')
+@click.option('--capabilities', is_flag=True, help='Print analysis of all capabilities.')
+@click.option('--heatmap', is_flag=True, help='Show a heatmap of roadmap dependency levels.')
+@click.option('--radar', is_flag=True, help='Show radar charts of roadmap missions and capabilities.')
+@click.option('--stackedbar', is_flag=True, help='Generate stacked bar chart visualization')
+def cli_main(dependency, readiness, full, table, summary, capabilities, heatmap, radar):
+    roadmap_data = create_combined_roadmap(dependency, readiness)
+    if heatmap:
+        plot_heatmap(roadmap_data)
+    if radar:
+        plot_radar_charts(roadmap_data)
+    main(dependency, readiness, full, table, summary, capabilities, heatmap, radar)
+    main(dependency, readiness, full, table, summary, capabilities, heatmap, radar)
 
-    main(args.dependency, args.readiness, args.full, args.table, args.summary, args.capabilities, args.heatmap)
+
+if __name__ == "__main__":
+    cli_main()
