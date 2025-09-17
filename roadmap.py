@@ -7,6 +7,7 @@ from me_roadmap.visualization.text import (
 )
 from me_roadmap.visualization.heatmap import plot_heatmap
 from me_roadmap.visualization.radar import plot_radar_charts
+from me_roadmap.visualization.sankey import plot_sankey, plot_all_sankey_types
 from me_roadmap.data_processing.combine import create_combined_roadmap
 from me_roadmap.data_processing.models import RoadmapData
 from typing import Dict, Tuple, Any
@@ -21,7 +22,9 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
          summary: bool = False,
          capabilities: bool = False,
          heatmap: bool = False,
-         radar: bool = False) -> RoadmapData:
+         radar: bool = False,
+         sankey: bool = False,
+         sankey_type: str = "mission_to_capability") -> RoadmapData:
     """
     Main function to execute the roadmap combination process.
 
@@ -34,6 +37,8 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
         capabilities (bool): Whether to print capabilities analysis.
         heatmap (bool): Whether to show a heatmap of roadmap dependency levels.
         radar (bool): Whether to show radar charts of roadmap missions and capabilities.
+        sankey (bool): Whether to show Sankey diagrams of roadmap flows.
+        sankey_type (str): Type of Sankey flow to visualize.
 
     Returns:
         RoadmapData: The combined roadmap data structure.
@@ -53,6 +58,11 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
             plot_heatmap(roadmap_data)
         elif radar:
             plot_radar_charts(roadmap_data)
+        elif sankey:
+            if sankey_type == "all":
+                plot_all_sankey_types(roadmap_data, max_missions=10)
+            else:
+                plot_sankey(roadmap_data, flow_type=sankey_type, max_missions=10)
         else:
             print_roadmap_sample(roadmap_data)
     else:
@@ -61,6 +71,7 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
     return roadmap_data
 
 
+# TODO Change everything to use case instead of mission.
 @click.command()
 @click.option('--dependency', type=click.Path(exists=True), required=True, help='Path to dependency CSV')
 @click.option('--readiness', type=click.Path(exists=True), required=True, help='Path to readiness CSV')
@@ -69,16 +80,22 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
 @click.option('--summary', is_flag=True, help='Print a summary of the roadmap data.')
 @click.option('--capabilities', is_flag=True, help='Print analysis of all capabilities.')
 @click.option('--heatmap', is_flag=True, help='Show a heatmap of roadmap dependency levels.')
-@click.option('--radar', is_flag=True, help='Show radar charts of roadmap missions and capabilities.')
-@click.option('--stackedbar', is_flag=True, help='Generate stacked bar chart visualization')
-def cli_main(dependency, readiness, full, table, summary, capabilities, heatmap, radar):
+@click.option('--sankey', is_flag=True, help='Show Sankey diagrams of roadmap flows.')
+@click.option('--sankey-type', default='mission_to_capability', 
+              type=click.Choice(['mission_to_capability', 'capability_to_readiness', 'mission_to_readiness', 'dependency_flow', 'all']),
+              help='Type of Sankey flow to visualize.')
+def cli_main(dependency, readiness, full, table, summary, capabilities, heatmap, radar, sankey, sankey_type):
     roadmap_data = create_combined_roadmap(dependency, readiness)
     if heatmap:
         plot_heatmap(roadmap_data)
     if radar:
         plot_radar_charts(roadmap_data)
-    main(dependency, readiness, full, table, summary, capabilities, heatmap, radar)
-    main(dependency, readiness, full, table, summary, capabilities, heatmap, radar)
+    if sankey:
+        if sankey_type == "all":
+            plot_all_sankey_types(roadmap_data, max_missions=10)
+        else:
+            plot_sankey(roadmap_data, flow_type=sankey_type, max_missions=10)
+    main(dependency, readiness, full, table, summary, capabilities, heatmap, radar, sankey, sankey_type)
 
 
 if __name__ == "__main__":
