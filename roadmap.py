@@ -80,6 +80,7 @@ def main(dependency_filename: str = 'Roadmap-dependency.csv',
 @click.option('--summary', is_flag=True, help='Print a summary of the roadmap data.')
 @click.option('--capabilities', is_flag=True, help='Print analysis of all capabilities.')
 @click.option('--heatmap', is_flag=True, help='Show a heatmap of roadmap dependency levels.')
+@click.option('--radar', is_flag=True, help='Show radar charts of roadmap missions and capabilities.')
 @click.option('--sankey', is_flag=True, help='Show Sankey diagrams of roadmap flows.')
 @click.option('--sankey-type', default='mission_to_capability', 
               type=click.Choice(['mission_to_capability', 'capability_to_readiness', 'mission_to_readiness', 'dependency_flow', 'all']),

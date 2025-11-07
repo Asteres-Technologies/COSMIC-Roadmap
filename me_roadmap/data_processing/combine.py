@@ -5,8 +5,33 @@ This module provides functionality to combine dependency and readiness data from
 into a unified data structure for analysis and visualization.
 """
 from me_roadmap.data_processing.models import RoadmapData
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Optional
 import pandas as pd
+import numpy as np
+import re
+
+
+import re
+
+
+def clean_value(value):
+    """
+    Cleans a single value by extracting the leading number.
+    If the value is a string, it extracts the number.
+    If the value is NaN or cannot be converted, it returns NaN.
+
+    Args:
+        value: Input value to clean (string, float, or NaN)
+
+    Returns:
+        float: Cleaned numeric value or NaN
+    """
+    if isinstance(value, str):
+        # Extract number from strings like "13.0-Advanced" -> 13.0
+        match = re.match(r"^\s*(\d+\.?\d*)\s*-", value)
+        if match:
+            return float(match.group(1))
+    return np.nan
 
 
 def load_csv_files(dependency_file: str, readiness_file: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -27,22 +52,25 @@ def load_csv_files(dependency_file: str, readiness_file: str) -> Tuple[pd.DataFr
     try:
         dependency_df = pd.read_csv(dependency_file, header=2, index_col=0)
         readiness_df = pd.read_csv(readiness_file, header=2, index_col=0)
+        print(f"✅ Successfully loaded CSV files: {dependency_file}, {readiness_file}")
         return dependency_df, readiness_df
     except FileNotFoundError as e:
-        print(f"Error: {e}. Please make sure the CSV files are in the same directory as the script.")
+        print(f"❌ Error: {e}. Please make sure the CSV files are in the correct location.")
         raise
     except Exception as e:
-        print(f"An error occurred while reading the CSV files: {e}")
+        print(f"❌ An error occurred while reading the CSV files: {e}")
         raise
 
 
-def clean_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def clean_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame, 
+                    apply_value_cleaning: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Cleans the DataFrames by removing whitespace and empty rows/columns.
+    Cleans the DataFrames by removing whitespace, empty rows/columns, and optionally cleaning cell values.
     
     Args:
         dependency_df (pd.DataFrame): The dependency DataFrame to clean.
         readiness_df (pd.DataFrame): The readiness DataFrame to clean.
+        apply_value_cleaning (bool): Whether to apply value cleaning to extract numbers from mixed-format cells.
         
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: Cleaned dependency and readiness DataFrames.
@@ -50,15 +78,25 @@ def clean_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame) ->
     dep_clean = dependency_df.copy()
     read_clean = readiness_df.copy()
     
+    # Clean column names and index
     dep_clean.columns = dep_clean.columns.str.strip()
     read_clean.columns = read_clean.columns.str.strip()
     dep_clean.index = dep_clean.index.str.strip()
     read_clean.index = read_clean.index.str.strip()
 
+    # Drop empty rows and columns
     dep_clean.dropna(how='all', axis=0, inplace=True)
     dep_clean.dropna(how='all', axis=1, inplace=True)
     read_clean.dropna(how='all', axis=0, inplace=True)
     read_clean.dropna(how='all', axis=1, inplace=True)
+    
+    # Apply value cleaning if requested
+    if apply_value_cleaning:
+        print("🧹 Applying enhanced value cleaning...")
+        for col in dep_clean.columns:
+            dep_clean[col] = dep_clean[col].apply(clean_value)
+        for col in read_clean.columns:
+            read_clean[col] = read_clean[col].apply(clean_value)
     
     return dep_clean, read_clean
 
@@ -107,7 +145,84 @@ def build_combined_structure(dependency_df: pd.DataFrame, readiness_df: pd.DataF
     return combined_data
 
 
-def create_combined_roadmap(dependency_file: str, readiness_file: str) -> RoadmapData:
+def display_data_summary(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame) -> None:
+    """
+    Display a summary of the loaded data for verification.
+
+    Args:
+        dependency_df (pd.DataFrame): Cleaned dependency data
+        readiness_df (pd.DataFrame): Cleaned readiness data
+    """
+    missions = dependency_df.columns.tolist()
+    capabilities = dependency_df.index.tolist()
+    
+    print("\n" + "="*60)
+    print("📊 DATA SUMMARY")
+    print("="*60)
+
+    print(f"Number of missions: {len(missions)}")
+    print(f"Number of capabilities: {len(capabilities)}")
+
+    print("\nFirst few missions:")
+    for i, mission in enumerate(missions[:5]):
+        print(f"  {i+1}. {mission}")
+    if len(missions) > 5:
+        print(f"  ... and {len(missions)-5} more")
+
+    print("\nFirst few capabilities:")
+    for i, capability in enumerate(capabilities[:5]):
+        print(f"  {i+1}. {capability}")
+    if len(capabilities) > 5:
+        print(f"  ... and {len(capabilities)-5} more")
+
+    print(f"\nDependency data shape: {dependency_df.shape}")
+    print(f"Readiness data shape: {readiness_df.shape}")
+
+    # Show data completeness
+    dep_completeness = (dependency_df.notna().sum().sum() / (len(missions) * len(capabilities))) * 100
+    read_completeness = (readiness_df.notna().sum().sum() / (len(missions) * len(capabilities))) * 100
+
+    print(f"\nData completeness:")
+    print(f"  Dependency data: {dep_completeness:.1f}% filled")
+    print(f"  Readiness data: {read_completeness:.1f}% filled")
+    print("="*60)
+
+
+def generate_simplified_csvs(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame, 
+                           output_dir: str = ".") -> None:
+    """
+    Generates simplified CSV files with transposed data (missions as rows, capabilities as columns).
+
+    Args:
+        dependency_df (pd.DataFrame): DataFrame with dependency data
+        readiness_df (pd.DataFrame): DataFrame with readiness data
+        output_dir (str): Directory to save the simplified CSV files
+    """
+    import os
+    
+    print("📁 Generating simplified CSV files...")
+
+    # Transpose the dataframes so that missions are rows and capabilities are columns
+    simplified_dependency_df = dependency_df.transpose()
+    simplified_readiness_df = readiness_df.transpose()
+
+    # Create output paths
+    dep_path = os.path.join(output_dir, 'simplified_dependency.csv')
+    read_path = os.path.join(output_dir, 'simplified_readiness.csv')
+
+    # Generate the CSV files (na_rep='' ensures NaN values are saved as empty cells)
+    simplified_dependency_df.to_csv(dep_path, na_rep='')
+    simplified_readiness_df.to_csv(read_path, na_rep='')
+
+    print("✅ Generated files:")
+    print(f"   - {dep_path}")
+    print(f"   - {read_path}")
+
+
+def create_combined_roadmap(dependency_file: str, readiness_file: str, 
+                          show_summary: bool = False, 
+                          export_simplified: bool = False,
+                          apply_value_cleaning: bool = True) -> RoadmapData:
     """
     Orchestrates the complete process of loading, cleaning, aligning, and combining roadmap data.
 
@@ -117,6 +232,9 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str) -> Roadma
     Args:
         dependency_file (str): The file path for the dependency CSV.
         readiness_file (str): The file path for the readiness CSV.
+        show_summary (bool): Whether to display data summary for verification.
+        export_simplified (bool): Whether to export simplified transposed CSV files.
+        apply_value_cleaning (bool): Whether to apply enhanced value cleaning.
 
     Returns:
         RoadmapData: A Pydantic model containing the combined roadmap data.
@@ -124,9 +242,22 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str) -> Roadma
     """
     try:
         dependency_df, readiness_df = load_csv_files(dependency_file, readiness_file)
-        dependency_df, readiness_df = clean_dataframes(dependency_df, readiness_df)
+        dependency_df, readiness_df = clean_dataframes(dependency_df, readiness_df, apply_value_cleaning)
+        
+        if show_summary:
+            display_data_summary(dependency_df, readiness_df)
+        
         dependency_df, readiness_df = align_dataframes(dependency_df, readiness_df)
+        
+        if export_simplified:
+            generate_simplified_csvs(dependency_df, readiness_df)
+        
         combined_dict = build_combined_structure(dependency_df, readiness_df)
-        return RoadmapData.from_dict(combined_dict)
-    except Exception:
+        roadmap_data = RoadmapData.from_dict(combined_dict)
+        
+        print(f"✅ Successfully created roadmap with {roadmap_data.get_mission_count()} missions and {len(roadmap_data.get_all_capabilities())} capabilities")
+        return roadmap_data
+        
+    except Exception as e:
+        print(f"❌ Error creating combined roadmap: {e}")
         return RoadmapData(missions={})
