@@ -2,7 +2,7 @@
 Sankey diagram visualization for roadmap data.
 
 This module provides functions to generate Sankey diagrams showing the flow relationships
-between missions, capabilities, dependency levels, and readiness levels.
+between use_cases, capabilities, dependency levels, and readiness levels.
 """
 import plotly.graph_objects as go
 import plotly.offline as pyo
@@ -15,64 +15,64 @@ from collections import defaultdict
 
 
 def create_sankey_data(roadmap_data: RoadmapData, 
-                      flow_type: str = "mission_to_capability",
+                      flow_type: str = "use_case_to_capability",
                       min_dependency_level: float = 0.0,
-                      max_missions: Optional[int] = None) -> Dict:
+                      max_use_cases: Optional[int] = None) -> Dict:
     """
     Creates the data structure needed for a Sankey diagram.
     
     Args:
         roadmap_data (RoadmapData): The roadmap data to visualize
         flow_type (str): Type of flow to visualize:
-            - "mission_to_capability": Missions -> Capabilities
+            - "use_case_to_capability": Use_Cases -> Capabilities
             - "capability_to_readiness": Capabilities -> Readiness Levels  
-            - "mission_to_readiness": Missions -> Capabilities -> Readiness Levels
+            - "use_case_to_readiness": Use_Cases -> Capabilities -> Readiness Levels
             - "dependency_flow": Dependency Levels -> Capabilities -> Readiness Levels
         min_dependency_level (float): Minimum dependency level to include
-        max_missions (int, optional): Limit number of missions for clarity
+        max_use_cases (int, optional): Limit number of use_cases for clarity
         
     Returns:
         Dict: Sankey diagram data structure with nodes and links
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         return {"nodes": [], "links": []}
     
-    missions = list(roadmap_data.missions.keys())
-    if max_missions:
-        missions = missions[:max_missions]
+    use_cases = list(roadmap_data.use_cases.keys())
+    if max_use_cases:
+        use_cases = use_cases[:max_use_cases]
     
     capabilities = roadmap_data.get_all_capabilities()
     
-    if flow_type == "mission_to_capability":
-        return _create_mission_capability_flow(roadmap_data, missions, capabilities, min_dependency_level)
+    if flow_type == "use_case_to_capability":
+        return _create_use_case_capability_flow(roadmap_data, use_cases, capabilities, min_dependency_level)
     elif flow_type == "capability_to_readiness":
-        return _create_capability_readiness_flow(roadmap_data, missions, capabilities, min_dependency_level)
-    elif flow_type == "mission_to_readiness":
-        return _create_mission_readiness_flow(roadmap_data, missions, capabilities, min_dependency_level)
+        return _create_capability_readiness_flow(roadmap_data, use_cases, capabilities, min_dependency_level)
+    elif flow_type == "use_case_to_readiness":
+        return _create_use_case_readiness_flow(roadmap_data, use_cases, capabilities, min_dependency_level)
     elif flow_type == "dependency_flow":
-        return _create_dependency_flow(roadmap_data, missions, capabilities, min_dependency_level)
+        return _create_dependency_flow(roadmap_data, use_cases, capabilities, min_dependency_level)
     else:
         raise ValueError(f"Unknown flow_type: {flow_type}")
 
 
-def _create_mission_capability_flow(roadmap_data: RoadmapData, 
-                                   missions: List[str], 
+def _create_use_case_capability_flow(roadmap_data: RoadmapData, 
+                                   use_cases: List[str], 
                                    capabilities: List[str],
                                    min_dependency_level: float) -> Dict:
-    """Create Mission -> Capability flow."""
+    """Create Use_Case -> Capability flow."""
     nodes = []
     links = []
     
     # Create nodes
-    mission_nodes = {mission: i for i, mission in enumerate(missions)}
-    capability_nodes = {cap: i + len(missions) for i, cap in enumerate(capabilities)}
+    use_case_nodes = {use_case: i for i, use_case in enumerate(use_cases)}
+    capability_nodes = {cap: i + len(use_cases) for i, cap in enumerate(capabilities)}
     
-    # Add mission nodes
-    for mission in missions:
+    # Add use_case nodes
+    for use_case in use_cases:
         nodes.append({
-            "label": f"Mission: {mission[:30]}{'...' if len(mission) > 30 else ''}",
+            "label": f"Use_Case: {use_case[:30]}{'...' if len(use_case) > 30 else ''}",
             "color": PRIMARY_COLOR,
-            "group": "mission"
+            "group": "use_case"
         })
     
     # Add capability nodes  
@@ -84,13 +84,13 @@ def _create_mission_capability_flow(roadmap_data: RoadmapData,
         })
     
     # Create links
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if capability in capabilities and entry.dependency_level is not None:
                 if entry.dependency_level >= min_dependency_level:
                     links.append({
-                        "source": mission_nodes[mission],
+                        "source": use_case_nodes[use_case],
                         "target": capability_nodes[capability],
                         "value": entry.dependency_level,
                         "label": f"Dependency: {entry.dependency_level}"
@@ -100,7 +100,7 @@ def _create_mission_capability_flow(roadmap_data: RoadmapData,
 
 
 def _create_capability_readiness_flow(roadmap_data: RoadmapData,
-                                     missions: List[str],
+                                     use_cases: List[str],
                                      capabilities: List[str],
                                      min_dependency_level: float) -> Dict:
     """Create Capability -> Readiness Level flow."""
@@ -109,9 +109,9 @@ def _create_capability_readiness_flow(roadmap_data: RoadmapData,
     
     # Collect unique readiness levels
     readiness_levels = set()
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level and
@@ -143,9 +143,9 @@ def _create_capability_readiness_flow(roadmap_data: RoadmapData,
     # Create links - aggregate by capability and readiness level
     capability_readiness_counts = defaultdict(lambda: defaultdict(int))
     
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level and
@@ -164,19 +164,19 @@ def _create_capability_readiness_flow(roadmap_data: RoadmapData,
     return {"nodes": nodes, "links": links}
 
 
-def _create_mission_readiness_flow(roadmap_data: RoadmapData,
-                                  missions: List[str],
+def _create_use_case_readiness_flow(roadmap_data: RoadmapData,
+                                  use_cases: List[str],
                                   capabilities: List[str],
                                   min_dependency_level: float) -> Dict:
-    """Create Mission -> Capability -> Readiness Level flow."""
+    """Create Use_Case -> Capability -> Readiness Level flow."""
     nodes = []
     links = []
     
     # Collect unique readiness levels
     readiness_levels = set()
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level and
@@ -186,16 +186,16 @@ def _create_mission_readiness_flow(roadmap_data: RoadmapData,
     readiness_levels = sorted(list(readiness_levels))
     
     # Create nodes with proper indexing
-    mission_nodes = {mission: i for i, mission in enumerate(missions)}
-    capability_nodes = {cap: i + len(missions) for i, cap in enumerate(capabilities)}
-    readiness_nodes = {rl: i + len(missions) + len(capabilities) for i, rl in enumerate(readiness_levels)}
+    use_case_nodes = {use_case: i for i, use_case in enumerate(use_cases)}
+    capability_nodes = {cap: i + len(use_cases) for i, cap in enumerate(capabilities)}
+    readiness_nodes = {rl: i + len(use_cases) + len(capabilities) for i, rl in enumerate(readiness_levels)}
     
     # Add nodes
-    for mission in missions:
+    for use_case in use_cases:
         nodes.append({
-            "label": f"Mission: {mission[:25]}{'...' if len(mission) > 25 else ''}",
+            "label": f"Use_Case: {use_case[:25]}{'...' if len(use_case) > 25 else ''}",
             "color": PRIMARY_COLOR,
-            "group": "mission"
+            "group": "use_case"
         })
     
     for capability in capabilities:
@@ -212,21 +212,21 @@ def _create_mission_readiness_flow(roadmap_data: RoadmapData,
             "group": "readiness"
         })
     
-    # Create Mission -> Capability links
-    mission_capability_flows = defaultdict(lambda: defaultdict(float))
+    # Create Use_Case -> Capability links
+    use_case_capability_flows = defaultdict(lambda: defaultdict(float))
     
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level):
-                mission_capability_flows[mission][capability] += entry.dependency_level
+                use_case_capability_flows[use_case][capability] += entry.dependency_level
     
-    for mission, capability_flows in mission_capability_flows.items():
+    for use_case, capability_flows in use_case_capability_flows.items():
         for capability, flow_value in capability_flows.items():
             links.append({
-                "source": mission_nodes[mission],
+                "source": use_case_nodes[use_case],
                 "target": capability_nodes[capability],
                 "value": flow_value,
                 "label": f"Dependency: {flow_value:.1f}"
@@ -235,9 +235,9 @@ def _create_mission_readiness_flow(roadmap_data: RoadmapData,
     # Create Capability -> Readiness links
     capability_readiness_flows = defaultdict(lambda: defaultdict(int))
     
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level and
@@ -257,7 +257,7 @@ def _create_mission_readiness_flow(roadmap_data: RoadmapData,
 
 
 def _create_dependency_flow(roadmap_data: RoadmapData,
-                           missions: List[str],
+                           use_cases: List[str],
                            capabilities: List[str],
                            min_dependency_level: float) -> Dict:
     """Create Dependency Level -> Capability -> Readiness Level flow."""
@@ -268,9 +268,9 @@ def _create_dependency_flow(roadmap_data: RoadmapData,
     dependency_levels = set()
     readiness_levels = set()
     
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level):
@@ -312,9 +312,9 @@ def _create_dependency_flow(roadmap_data: RoadmapData,
     dep_cap_flows = defaultdict(lambda: defaultdict(int))
     cap_readiness_flows = defaultdict(lambda: defaultdict(int))
     
-    for mission in missions:
-        mission_obj = roadmap_data.missions[mission]
-        for capability, entry in mission_obj.capabilities.items():
+    for use_case in use_cases:
+        use_case_obj = roadmap_data.use_cases[use_case]
+        for capability, entry in use_case_obj.capabilities.items():
             if (capability in capabilities and 
                 entry.dependency_level is not None and 
                 entry.dependency_level >= min_dependency_level):
@@ -347,9 +347,9 @@ def _create_dependency_flow(roadmap_data: RoadmapData,
 
 
 def plot_sankey(roadmap_data: RoadmapData,
-               flow_type: str = "mission_to_capability",
+               flow_type: str = "use_case_to_capability",
                min_dependency_level: float = 0.0,
-               max_missions: Optional[int] = None,
+               max_use_cases: Optional[int] = None,
                title: Optional[str] = None,
                output_dir: Optional[str] = None,
                show_plot: bool = True) -> str:
@@ -360,7 +360,7 @@ def plot_sankey(roadmap_data: RoadmapData,
         roadmap_data (RoadmapData): The roadmap data to visualize
         flow_type (str): Type of flow to visualize
         min_dependency_level (float): Minimum dependency level to include
-        max_missions (int, optional): Limit number of missions for clarity
+        max_use_cases (int, optional): Limit number of use_cases for clarity
         title (str, optional): Custom title for the plot
         output_dir (str, optional): Directory to save the plot
         show_plot (bool): Whether to display the plot in browser
@@ -368,7 +368,7 @@ def plot_sankey(roadmap_data: RoadmapData,
     Returns:
         str: Path to the saved HTML file
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return ""
     
@@ -377,7 +377,7 @@ def plot_sankey(roadmap_data: RoadmapData,
         roadmap_data, 
         flow_type=flow_type,
         min_dependency_level=min_dependency_level,
-        max_missions=max_missions
+        max_use_cases=max_use_cases
     )
     
     if not sankey_data["nodes"] or not sankey_data["links"]:
@@ -387,9 +387,9 @@ def plot_sankey(roadmap_data: RoadmapData,
     # Set default title
     if title is None:
         title_map = {
-            "mission_to_capability": "Mission to Capability Flow",
+            "use_case_to_capability": "Use_Case to Capability Flow",
             "capability_to_readiness": "Capability to Readiness Flow", 
-            "mission_to_readiness": "Mission → Capability → Readiness Flow",
+            "use_case_to_readiness": "Use_Case → Capability → Readiness Flow",
             "dependency_flow": "Dependency → Capability → Readiness Flow"
         }
         title = f"COSMIC Roadmap: {title_map.get(flow_type, 'Data Flow')}"
@@ -441,7 +441,7 @@ def plot_sankey(roadmap_data: RoadmapData,
 
 def plot_all_sankey_types(roadmap_data: RoadmapData,
                          min_dependency_level: float = 0.0,
-                         max_missions: Optional[int] = 10,
+                         max_use_cases: Optional[int] = 10,
                          output_dir: Optional[str] = None) -> List[str]:
     """
     Creates all types of Sankey diagrams for comprehensive analysis.
@@ -449,16 +449,16 @@ def plot_all_sankey_types(roadmap_data: RoadmapData,
     Args:
         roadmap_data (RoadmapData): The roadmap data to visualize
         min_dependency_level (float): Minimum dependency level to include
-        max_missions (int, optional): Limit number of missions for clarity
+        max_use_cases (int, optional): Limit number of use_cases for clarity
         output_dir (str, optional): Directory to save the plots
         
     Returns:
         List[str]: Paths to all saved HTML files
     """
     flow_types = [
-        "mission_to_capability",
+        "use_case_to_capability",
         "capability_to_readiness", 
-        "mission_to_readiness",
+        "use_case_to_readiness",
         "dependency_flow"
     ]
     
@@ -470,7 +470,7 @@ def plot_all_sankey_types(roadmap_data: RoadmapData,
                 roadmap_data,
                 flow_type=flow_type,
                 min_dependency_level=min_dependency_level,
-                max_missions=max_missions,
+                max_use_cases=max_use_cases,
                 output_dir=output_dir,
                 show_plot=False
             )

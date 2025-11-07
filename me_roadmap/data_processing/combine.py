@@ -103,7 +103,7 @@ def clean_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame,
 
 def align_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Aligns DataFrames to have common missions and capabilities.
+    Aligns DataFrames to have common use_cases and capabilities.
     
     Args:
         dependency_df (pd.DataFrame): The dependency DataFrame.
@@ -112,11 +112,11 @@ def align_dataframes(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame) ->
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: Aligned dependency and readiness DataFrames.
     """
-    common_missions = dependency_df.columns.intersection(readiness_df.columns)
+    common_use_cases = dependency_df.columns.intersection(readiness_df.columns)
     common_capabilities = dependency_df.index.intersection(readiness_df.index)
 
-    dep_aligned = dependency_df.loc[common_capabilities, common_missions]
-    read_aligned = readiness_df.loc[common_capabilities, common_missions]
+    dep_aligned = dependency_df.loc[common_capabilities, common_use_cases]
+    read_aligned = readiness_df.loc[common_capabilities, common_use_cases]
     
     return dep_aligned, read_aligned
 
@@ -131,17 +131,17 @@ def build_combined_structure(dependency_df: pd.DataFrame, readiness_df: pd.DataF
         
     Returns:
         Dict[str, Dict[str, Tuple[Any, Any]]]: Combined data structure.
-                Structure: {mission: {capability: (dependency, readiness)}}
+                Structure: {use_case: {capability: (dependency, readiness)}}
     """
     # Use pandas .stack() for efficient iteration
     dep_stack = dependency_df.stack()
     read_stack = readiness_df.stack()
     combined_data = {}
-    for (capability, mission), dep_value in dep_stack.items():
-        read_value = read_stack.get((capability, mission), None)
-        if mission not in combined_data:
-            combined_data[mission] = {}
-        combined_data[mission][capability] = (dep_value, read_value)
+    for (capability, use_case), dep_value in dep_stack.items():
+        read_value = read_stack.get((capability, use_case), None)
+        if use_case not in combined_data:
+            combined_data[use_case] = {}
+        combined_data[use_case][capability] = (dep_value, read_value)
     return combined_data
 
 
@@ -153,21 +153,21 @@ def display_data_summary(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame
         dependency_df (pd.DataFrame): Cleaned dependency data
         readiness_df (pd.DataFrame): Cleaned readiness data
     """
-    missions = dependency_df.columns.tolist()
+    use_cases = dependency_df.columns.tolist()
     capabilities = dependency_df.index.tolist()
     
     print("\n" + "="*60)
     print("📊 DATA SUMMARY")
     print("="*60)
 
-    print(f"Number of missions: {len(missions)}")
+    print(f"Number of use_cases: {len(use_cases)}")
     print(f"Number of capabilities: {len(capabilities)}")
 
-    print("\nFirst few missions:")
-    for i, mission in enumerate(missions[:5]):
-        print(f"  {i+1}. {mission}")
-    if len(missions) > 5:
-        print(f"  ... and {len(missions)-5} more")
+    print("\nFirst few use_cases:")
+    for i, use_case in enumerate(use_cases[:5]):
+        print(f"  {i+1}. {use_case}")
+    if len(use_cases) > 5:
+        print(f"  ... and {len(use_cases)-5} more")
 
     print("\nFirst few capabilities:")
     for i, capability in enumerate(capabilities[:5]):
@@ -179,8 +179,8 @@ def display_data_summary(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame
     print(f"Readiness data shape: {readiness_df.shape}")
 
     # Show data completeness
-    dep_completeness = (dependency_df.notna().sum().sum() / (len(missions) * len(capabilities))) * 100
-    read_completeness = (readiness_df.notna().sum().sum() / (len(missions) * len(capabilities))) * 100
+    dep_completeness = (dependency_df.notna().sum().sum() / (len(use_cases) * len(capabilities))) * 100
+    read_completeness = (readiness_df.notna().sum().sum() / (len(use_cases) * len(capabilities))) * 100
 
     print(f"\nData completeness:")
     print(f"  Dependency data: {dep_completeness:.1f}% filled")
@@ -191,7 +191,7 @@ def display_data_summary(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame
 def generate_simplified_csvs(dependency_df: pd.DataFrame, readiness_df: pd.DataFrame, 
                            output_dir: str = ".") -> None:
     """
-    Generates simplified CSV files with transposed data (missions as rows, capabilities as columns).
+    Generates simplified CSV files with transposed data (use_cases as rows, capabilities as columns).
 
     Args:
         dependency_df (pd.DataFrame): DataFrame with dependency data
@@ -202,7 +202,7 @@ def generate_simplified_csvs(dependency_df: pd.DataFrame, readiness_df: pd.DataF
     
     print("📁 Generating simplified CSV files...")
 
-    # Transpose the dataframes so that missions are rows and capabilities are columns
+    # Transpose the dataframes so that use_cases are rows and capabilities are columns
     simplified_dependency_df = dependency_df.transpose()
     simplified_readiness_df = readiness_df.transpose()
 
@@ -255,9 +255,9 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str,
         combined_dict = build_combined_structure(dependency_df, readiness_df)
         roadmap_data = RoadmapData.from_dict(combined_dict)
         
-        print(f"✅ Successfully created roadmap with {roadmap_data.get_mission_count()} missions and {len(roadmap_data.get_all_capabilities())} capabilities")
+        print(f"✅ Successfully created roadmap with {roadmap_data.get_use_case_count()} use_cases and {len(roadmap_data.get_all_capabilities())} capabilities")
         return roadmap_data
         
     except Exception as e:
         print(f"❌ Error creating combined roadmap: {e}")
-        return RoadmapData(missions={})
+        return RoadmapData(use_cases={})

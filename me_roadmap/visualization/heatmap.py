@@ -2,7 +2,7 @@
 Heatmap visualizations for roadmap data.
 
 This module provides functions to generate heatmaps for dependency and readiness values
-across missions and capabilities.
+across use_cases and capabilities.
 """
 from matplotlib.colors import LinearSegmentedColormap
 from me_roadmap.data_processing.models import RoadmapData
@@ -12,31 +12,31 @@ from typing import Optional
 import numpy as np
 import os
 
-def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", mission_keys: Optional[list] = None, capability_keys: Optional[list] = None, cmap: str = "YlOrRd"):
+def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", use_case_keys: Optional[list] = None, capability_keys: Optional[list] = None, cmap: str = "YlOrRd"):
     """
-    Plots a heatmap for the given value type ("dependency" or "readiness") across missions and capabilities.
+    Plots a heatmap for the given value type ("dependency" or "readiness") across use_cases and capabilities.
 
     Args:
         roadmap_data (RoadmapData): The roadmap data to visualize.
         value_type (str): "dependency" or "readiness".
-        mission_keys (list, optional): List of missions to include. If None, use all.
+        use_case_keys (list, optional): List of use_cases to include. If None, use all.
         capability_keys (list, optional): List of capabilities to include. If None, use all.
         cmap (str): Matplotlib colormap name.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
-    # Select missions and capabilities
-    missions = mission_keys if mission_keys else list(roadmap_data.missions.keys())
+    # Select use_cases and capabilities
+    use_cases = use_case_keys if use_case_keys else list(roadmap_data.use_cases.keys())
     capabilities = capability_keys if capability_keys else roadmap_data.get_all_capabilities()
 
     # Build the matrix
     matrix = []
     for capability in capabilities:
         row = []
-        for mission in missions:
-            entry = roadmap_data.missions[mission].capabilities.get(capability)
+        for use_case in use_cases:
+            entry = roadmap_data.use_cases[use_case].capabilities.get(capability)
             if entry:
                 if value_type == "dependency":
                     val = entry.dependency_level
@@ -51,7 +51,7 @@ def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", miss
     # Plot
     # Calculate figure size for better aspect ratio
     min_width, min_height = 12, 8
-    width = max(min_width, len(missions) * 1.2)
+    width = max(min_width, len(use_cases) * 1.2)
     height = max(min_height, len(capabilities) * 0.7)
     fig, ax = plt.subplots(figsize=(width, height))
     custom_cmap = LinearSegmentedColormap.from_list(
@@ -60,8 +60,8 @@ def plot_heatmap(roadmap_data: RoadmapData, value_type: str = "dependency", miss
     im = ax.imshow(matrix, aspect="auto", cmap=custom_cmap, interpolation="nearest")
     cbar = fig.colorbar(im, ax=ax, label=f"{value_type.title()} Level")
 
-    ax.set_xticks(np.arange(len(missions)))
-    ax.set_xticklabels(missions, rotation=45, ha="right", fontsize=14)
+    ax.set_xticks(np.arange(len(use_cases)))
+    ax.set_xticklabels(use_cases, rotation=45, ha="right", fontsize=14)
     ax.set_yticks(np.arange(len(capabilities)))
     ax.set_yticklabels(capabilities, fontsize=14)
     ax.set_title(f"Roadmap {value_type.title()} Heatmap", fontsize=18, pad=20)

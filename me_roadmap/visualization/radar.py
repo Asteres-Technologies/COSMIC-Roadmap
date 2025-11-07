@@ -1,7 +1,7 @@
 """
 Radar chart visualization for roadmap data.
 
-This module provides a function to generate radar charts for missions and capabilities using matplotlib.
+This module provides a function to generate radar charts for use_cases and capabilities using matplotlib.
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,26 +11,26 @@ import os
 from me_roadmap.visualization import PRIMARY_COLOR, SECONDARY_COLOR
 import string
 
-def plot_radar_charts(roadmap_data: RoadmapData, value_type: str = "dependency", missions_per_plot: int = 6, output_dir: str = None):
+def plot_radar_charts(roadmap_data: RoadmapData, value_type: str = "dependency", use_cases_per_plot: int = 6, output_dir: str = None):
     """
-    Plots radar charts for roadmap missions and capabilities.
-    Each chart shows up to `missions_per_plot` missions.
+    Plots radar charts for roadmap use_cases and capabilities.
+    Each chart shows up to `use_cases_per_plot` use_cases.
 
     Args:
         roadmap_data (RoadmapData): The roadmap data to visualize.
         value_type (str): "dependency" or "readiness".
-        missions_per_plot (int): Number of missions per radar chart.
+        use_cases_per_plot (int): Number of use_cases per radar chart.
         output_dir (str, optional): Directory to save the chart PNGs. Defaults to data/processed.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
     capabilities = roadmap_data.get_all_capabilities()
     cap_labels = list(string.ascii_uppercase)[:len(capabilities)]
     cap_legend = {label: cap for label, cap in zip(cap_labels, capabilities)}
-    missions = list(roadmap_data.missions.keys())
-    num_plots = int(np.ceil(len(missions) / missions_per_plot))
+    use_cases = list(roadmap_data.use_cases.keys())
+    num_plots = int(np.ceil(len(use_cases) / use_cases_per_plot))
 
     if output_dir is None:
         output_dir = os.path.join(os.path.dirname(__file__), '../../data/processed/radar')
@@ -41,9 +41,9 @@ def plot_radar_charts(roadmap_data: RoadmapData, value_type: str = "dependency",
 
     for plot_idx in range(num_plots):
         fig, ax = plt.subplots(figsize=(10, 8), subplot_kw=dict(polar=True))
-        start = plot_idx * missions_per_plot
-        end = min(start + missions_per_plot, len(missions))
-        plot_missions = missions[start:end]
+        start = plot_idx * use_cases_per_plot
+        end = min(start + use_cases_per_plot, len(use_cases))
+        plot_use_cases = use_cases[start:end]
 
         angles = np.linspace(0, 2 * np.pi, len(capabilities), endpoint=False).tolist()
         angles += angles[:1]  # close the circle
@@ -51,10 +51,10 @@ def plot_radar_charts(roadmap_data: RoadmapData, value_type: str = "dependency",
         min_val = -0.1  # Set minimum value for all axes
         ax.set_ylim(min_val, None)
 
-        for mission in plot_missions:
+        for use_case in plot_use_cases:
             values = []
             for cap in capabilities:
-                entry = roadmap_data.missions[mission].capabilities.get(cap)
+                entry = roadmap_data.use_cases[use_case].capabilities.get(cap)
                 if entry:
                     val = entry.dependency_level if value_type == "dependency" else entry.readiness_level
                     values.append(val if val is not None else 0)
@@ -62,7 +62,7 @@ def plot_radar_charts(roadmap_data: RoadmapData, value_type: str = "dependency",
                     values.append(0)
             values += values[:1]  # close the circle
             color = random_color()
-            ax.plot(angles, values, label=mission, color=color, linewidth=2)
+            ax.plot(angles, values, label=use_case, color=color, linewidth=2)
             ax.fill(angles, values, color=color, alpha=0.18)
 
         ax.set_xticks(angles[:-1])

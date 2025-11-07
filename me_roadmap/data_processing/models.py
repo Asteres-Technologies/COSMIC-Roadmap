@@ -25,9 +25,9 @@ class RoadmapEntry(BaseModel):
         return str(v) if v is not None else None
     
     @property
-    def is_mission_critical(self) -> bool:
-        """Check if this capability is mission critical."""
-        return self.dependency is not None and "Mission Critical" in self.dependency
+    def is_use_case_critical(self) -> bool:
+        """Check if this capability is use_case critical."""
+        return self.dependency is not None and "Use Case Critical" in self.dependency
     
     @property
     def is_not_used(self) -> bool:
@@ -55,18 +55,18 @@ class RoadmapEntry(BaseModel):
             return None
 
 
-class Mission(BaseModel):
+class Use_Case(BaseModel):
     """
-    Represents a mission with its associated capabilities.
+    Represents a use_case with its associated capabilities.
     """
     name: str
     capabilities: Dict[str, RoadmapEntry]
     
     def get_critical_capabilities(self) -> List[str]:
-        """Get list of mission critical capabilities."""
+        """Get list of use_case critical capabilities."""
         return [
             capability for capability, entry in self.capabilities.items()
-            if entry.is_mission_critical
+            if entry.is_use_case_critical
         ]
     
     def get_unused_capabilities(self) -> List[str]:
@@ -77,7 +77,7 @@ class Mission(BaseModel):
         ]
     
     def get_capability_count(self) -> int:
-        """Get total number of capabilities for this mission."""
+        """Get total number of capabilities for this use_case."""
         return len(self.capabilities)
 
 
@@ -85,7 +85,7 @@ class RoadmapData(BaseModel):
     """
     Main container for all roadmap data with analysis methods.
     """
-    missions: Dict[str, Mission]
+    use_cases: Dict[str, Use_Case]
     
     @classmethod
     def from_dict(cls, data: Dict[str, Dict[str, Any]]) -> "RoadmapData":
@@ -93,81 +93,81 @@ class RoadmapData(BaseModel):
         Create RoadmapData from the legacy dictionary format.
         
         Args:
-            data: Dictionary in format {mission: {capability: (dependency, readiness)}}
+            data: Dictionary in format {use_case: {capability: (dependency, readiness)}}
             
         Returns:
             RoadmapData instance
         """
-        missions = {}
-        for mission_name, capabilities_dict in data.items():
+        use_cases = {}
+        for use_case_name, capabilities_dict in data.items():
             capabilities = {}
             for capability_name, (dependency, readiness) in capabilities_dict.items():
                 capabilities[capability_name] = RoadmapEntry(
                     dependency=dependency,
                     readiness=readiness
                 )
-            missions[mission_name] = Mission(
-                name=mission_name,
+            use_cases[use_case_name] = Use_Case(
+                name=use_case_name,
                 capabilities=capabilities
             )
-        return cls(missions=missions)
+        return cls(use_cases=use_cases)
     
     def to_dict(self) -> Dict[str, Dict[str, tuple]]:
         """
         Convert back to legacy dictionary format for backward compatibility.
         
         Returns:
-            Dictionary in format {mission: {capability: (dependency, readiness)}}
+            Dictionary in format {use_case: {capability: (dependency, readiness)}}
         """
         result = {}
-        for mission_name, mission in self.missions.items():
-            result[mission_name] = {}
-            for capability_name, entry in mission.capabilities.items():
-                result[mission_name][capability_name] = (entry.dependency, entry.readiness)
+        for use_case_name, use_case in self.use_cases.items():
+            result[use_case_name] = {}
+            for capability_name, entry in use_case.capabilities.items():
+                result[use_case_name][capability_name] = (entry.dependency, entry.readiness)
         return result
     
-    def get_mission_names(self) -> List[str]:
-        """Get list of all mission names."""
-        return list(self.missions.keys())
+    def get_use_case_names(self) -> List[str]:
+        """Get list of all use_case names."""
+        return list(self.use_cases.keys())
     
     def get_all_capabilities(self) -> List[str]:
-        """Get list of all unique capabilities across missions."""
+        """Get list of all unique capabilities across use_cases."""
         capabilities = set()
-        for mission in self.missions.values():
-            capabilities.update(mission.capabilities.keys())
+        for use_case in self.use_cases.values():
+            capabilities.update(use_case.capabilities.keys())
         return sorted(list(capabilities))
     
-    def get_missions_using_capability(self, capability: str) -> List[str]:
-        """Get list of missions that use a specific capability."""
-        missions = []
-        for mission_name, mission in self.missions.items():
-            if capability in mission.capabilities and not mission.capabilities[capability].is_not_used:
-                missions.append(mission_name)
-        return missions
+    def get_use_cases_using_capability(self, capability: str) -> List[str]:
+        """Get list of use_cases that use a specific capability."""
+        use_cases = []
+        for use_case_name, use_case in self.use_cases.items():
+            if capability in use_case.capabilities and not use_case.capabilities[capability].is_not_used:
+                use_cases.append(use_case_name)
+        return use_cases
     
-    def get_critical_capabilities_by_mission(self, mission_name: str) -> List[str]:
-        """Get mission critical capabilities for a specific mission."""
-        if mission_name not in self.missions:
+    def get_critical_capabilities_by_use_case(self, use_case_name: str) -> List[str]:
+        """Get use_case critical capabilities for a specific use_case."""
+        if use_case_name not in self.use_cases:
             return []
-        return self.missions[mission_name].get_critical_capabilities()
+        return self.use_cases[use_case_name].get_critical_capabilities()
     
     def get_capability_usage_stats(self) -> Dict[str, int]:
         """Get usage statistics for all capabilities."""
         stats = {}
         for capability in self.get_all_capabilities():
-            stats[capability] = len(self.get_missions_using_capability(capability))
+            stats[capability] = len(self.get_use_cases_using_capability(capability))
         return stats
     
-    def get_mission_count(self) -> int:
-        """Get total number of missions."""
-        return len(self.missions)
+    def get_use_case_count(self) -> int:
+        """Get total number of use_cases."""
+        return len(self.use_cases)
     
     def get_total_capability_entries(self) -> int:
-        """Get total number of capability entries across all missions."""
-        return sum(mission.get_capability_count() for mission in self.missions.values())
+        """Get total number of capability entries across all use_cases."""
+        return sum(use_case.get_capability_count() for use_case in self.use_cases.values())
     
-    def get_average_capabilities_per_mission(self) -> float:
-        """Get average number of capabilities per mission."""
-        if not self.missions:
+    def get_average_capabilities_per_use_case(self) -> float:
+        """Get average number of capabilities per use_case."""
+        if not self.use_cases:
             return 0.0
-        return self.get_total_capability_entries() / self.get_mission_count()
+        return self.get_total_capability_entries() / self.get_use_case_count()

@@ -41,7 +41,7 @@ def clean_value(value):
 def load_and_merge_data(readiness_file, dependency_file):
     """
     Loads readiness and dependency data from CSV files, merges them,
-    and returns the merged data along with lists of missions and capabilities.
+    and returns the merged data along with lists of use_cases and capabilities.
 
     Args:
         readiness_file (str): Path to the readiness CSV file.
@@ -49,8 +49,8 @@ def load_and_merge_data(readiness_file, dependency_file):
 
     Returns:
         tuple: A tuple containing:
-            - dict: A dictionary of merged mission data.
-            - list: A list of mission names.
+            - dict: A dictionary of merged use_case data.
+            - list: A list of use_case names.
             - list: A list of capability names.
     """
     # Load the datasets, skipping the first two rows
@@ -73,28 +73,28 @@ def load_and_merge_data(readiness_file, dependency_file):
     for col in df_dependency.columns:
         df_dependency[col] = df_dependency[col].apply(clean_value)
 
-    # Get the list of missions and capabilities
-    missions = df_readiness.columns.tolist()
+    # Get the list of use_cases and capabilities
+    use_cases = df_readiness.columns.tolist()
     capabilities = df_readiness.index.tolist()
 
     # Create the merged data structure
-    mission_data = {}
-    for mission in missions:
-        mission_data[mission] = []
+    use_case_data = {}
+    for use_case in use_cases:
+        use_case_data[use_case] = []
         for capability in capabilities:
-            readiness = df_readiness.loc[capability, mission]
-            dependency = df_dependency.loc[capability, mission]
-            mission_data[mission].append((readiness, dependency))
+            readiness = df_readiness.loc[capability, use_case]
+            dependency = df_dependency.loc[capability, use_case]
+            use_case_data[use_case].append((readiness, dependency))
 
-    return mission_data, missions, capabilities
+    return use_case_data, use_cases, capabilities
 
-def generate_simplified_csvs(mission_data, missions, capabilities):
+def generate_simplified_csvs(use_case_data, use_cases, capabilities):
     """
     Generates two simplified CSV files for readiness and dependency data.
 
     Args:
-        mission_data (dict): Dictionary of mission data.
-        missions (list): List of mission names.
+        use_case_data (dict): Dictionary of use_case data.
+        use_cases (list): List of use_case names.
         capabilities (list): List of capability names.
     """
     # --- Create simplified_readiness.csv ---
@@ -102,20 +102,20 @@ def generate_simplified_csvs(mission_data, missions, capabilities):
         writer_readiness = csv.writer(f_readiness)
         # Write header row with capabilities
         writer_readiness.writerow([''] + capabilities)
-        # Write data rows for each mission
-        for mission in missions:
-            readiness_data = [t[0] if pd.notna(t[0]) else '' for t in mission_data[mission]]
-            writer_readiness.writerow([mission] + readiness_data)
+        # Write data rows for each use_case
+        for use_case in use_cases:
+            readiness_data = [t[0] if pd.notna(t[0]) else '' for t in use_case_data[use_case]]
+            writer_readiness.writerow([use_case] + readiness_data)
 
     # --- Create simplified_dependency.csv ---
     with open('simplified_dependency.csv', 'w', newline='') as f_dependency:
         writer_dependency = csv.writer(f_dependency)
         # Write header row with capabilities
         writer_dependency.writerow([''] + capabilities)
-        # Write data rows for each mission
-        for mission in missions:
-            dependency_data = [t[1] if pd.notna(t[1]) else '' for t in mission_data[mission]]
-            writer_dependency.writerow([mission] + dependency_data)
+        # Write data rows for each use_case
+        for use_case in use_cases:
+            dependency_data = [t[1] if pd.notna(t[1]) else '' for t in use_case_data[use_case]]
+            writer_dependency.writerow([use_case] + dependency_data)
 
 # =============================================================================
 # Optimization Functions
@@ -123,25 +123,25 @@ def generate_simplified_csvs(mission_data, missions, capabilities):
 
 def cost_function(p_vector):
     """
-    Cost function for mission optimization.
+    Cost function for use_case optimization.
 
     Args:
-        p_vector: Permutation vector representing mission order
+        p_vector: Permutation vector representing use_case order
 
     Returns:
-        float: Total cost for this mission ordering
+        float: Total cost for this use_case ordering
     """
-    global save_results, active_model, file_prefix, missions, mission_data, capabilities
+    global save_results, active_model, file_prefix, use_cases, use_case_data, capabilities
 
     if save_results:
         print(p_vector)
 
-    # Get ordered mission data
-    mission_order = [missions[ii] for ii in p_vector]
-    mission_data_ordered = [mission_data[mm] for mm in mission_order]
+    # Get ordered use_case data
+    use_case_order = [use_cases[ii] for ii in p_vector]
+    use_case_data_ordered = [use_case_data[mm] for mm in use_case_order]
 
     # Reward deferring all capability upgrades as much as possible
-    readiness_so_far = [0 for rr, dd in mission_data_ordered[0]]
+    readiness_so_far = [0 for rr, dd in use_case_data_ordered[0]]
     cost = 0
 
     cost_matrix = []
@@ -150,13 +150,13 @@ def cost_function(p_vector):
     upgrade_cost_matrix = []
     penalty_cost_matrix = []
 
-    for idx, this_mission_data in enumerate(mission_data_ordered):
-        this_readiness = [rr for rr, dd in this_mission_data]
-        this_dependency = [dd for rr, dd in this_mission_data]
+    for idx, this_use_case_data in enumerate(use_case_data_ordered):
+        this_readiness = [rr for rr, dd in this_use_case_data]
+        this_dependency = [dd for rr, dd in this_use_case_data]
 
         if active_model in [1, 2, 3]:
             # Dependency is 0..1
-            # 1 is mission critical
+            # 1 is use_case critical
             # 0 is unneeded
             # Readiness is 0 to 13, 9 is operational
 
@@ -172,12 +172,12 @@ def cost_function(p_vector):
 
             if idx > 0:
                 # Grab last readiness
-                last_mission_readiness = readiness_progression_matrix[-1]
+                last_use_case_readiness = readiness_progression_matrix[-1]
                 last_upgrade = upgrade_cost_matrix[-1]
                 last_penalty = penalty_cost_matrix[-1]
             else:
                 # If nothing previously, assume not ready
-                last_mission_readiness = [0 for rr in this_readiness]
+                last_use_case_readiness = [0 for rr in this_readiness]
                 last_upgrade = [0 for rr in this_readiness]
                 last_penalty = [0 for rr in this_readiness]
 
@@ -185,13 +185,13 @@ def cost_function(p_vector):
             # Use highest of 9, the baseline readiness, or the established readiness
             # Else use the highest of the previous readiness or the current baseline readiness
             readiness_progression_matrix += [[max([lr, rr]) if dd < dependency_threshold else max([lr, rr, 9]) 
-                                            for lr, rr, dd in zip(last_mission_readiness, this_readiness, this_dependency)]]
+                                            for lr, rr, dd in zip(last_use_case_readiness, this_readiness, this_dependency)]]
 
             # Calculate upgrade cost (difference between new and old readiness)
             upgrade_cost_matrix += [[max([0, nr - lr]) 
-                                   for nr, lr in zip(readiness_progression_matrix[-1], last_mission_readiness)]]
+                                   for nr, lr in zip(readiness_progression_matrix[-1], last_use_case_readiness)]]
 
-            # Calculate time penalty (missions that had upgrades suffer time penalty)
+            # Calculate time penalty (use_cases that had upgrades suffer time penalty)
             penalty_cost_matrix += [[lp if ((lp > 0) or (lu > 0)) else 0 
                                    for lp, lu in zip(last_penalty, last_upgrade)]]
 
@@ -214,18 +214,18 @@ def cost_function(p_vector):
             this_writer = csv.writer(this_f)
             # Write header row with capabilities
             this_writer.writerow([''] + capabilities)
-            # Write data rows for each mission
-            for idx, mission in enumerate(mission_order):
-                this_writer.writerow([mission] + cost_progression_matrix[idx])
+            # Write data rows for each use_case
+            for idx, use_case in enumerate(use_case_order):
+                this_writer.writerow([use_case] + cost_progression_matrix[idx])
 
         # Create capability_growth_matrix.csv
         with open(file_prefix + 'cap_growth_matrix.csv', 'w', newline='') as this_f:
             this_writer = csv.writer(this_f)
             # Write header row with capabilities
             this_writer.writerow([''] + capabilities)
-            # Write data rows for each mission
-            for idx, mission in enumerate(mission_order):
-                this_writer.writerow([mission] + readiness_progression_matrix[idx])
+            # Write data rows for each use_case
+            for idx, use_case in enumerate(use_case_order):
+                this_writer.writerow([use_case] + readiness_progression_matrix[idx])
 
     return cost
 
@@ -247,14 +247,14 @@ def cost_wrapper(float_vector):
 # Output Functions
 # =============================================================================
 
-def save_optimized_files(optimal_permutation, mission_data, missions, capabilities, file_prefix):
+def save_optimized_files(optimal_permutation, use_case_data, use_cases, capabilities, file_prefix):
     """
-    Save the optimized mission order to CSV files.
+    Save the optimized use_case order to CSV files.
 
     Args:
-        optimal_permutation: Optimized order of missions
-        mission_data: Dictionary of mission data
-        missions: List of mission names
+        optimal_permutation: Optimized order of use_cases
+        use_case_data: Dictionary of use_case data
+        use_cases: List of use_case names
         capabilities: List of capability names
         file_prefix: Prefix for output files
     """
@@ -263,23 +263,23 @@ def save_optimized_files(optimal_permutation, mission_data, missions, capabiliti
         writer_readiness = csv.writer(f_readiness)
         # Write header row with capabilities
         writer_readiness.writerow([''] + capabilities)
-        # Write data rows for each mission
+        # Write data rows for each use_case
         for ii in optimal_permutation:
-            mission = missions[ii]
-            readiness_data = [t[0] if pd.notna(t[0]) else '' for t in mission_data[mission]]
-            writer_readiness.writerow([mission] + readiness_data)
+            use_case = use_cases[ii]
+            readiness_data = [t[0] if pd.notna(t[0]) else '' for t in use_case_data[use_case]]
+            writer_readiness.writerow([use_case] + readiness_data)
 
     # Save optimized dependency file
     with open(file_prefix + 'optimized_dependency.csv', 'w', newline='') as f_dependency:
         writer_dependency = csv.writer(f_dependency)
         # Write header row with capabilities
         writer_dependency.writerow([''] + capabilities)
-        # Write data rows for each mission
+        # Write data rows for each use_case
         for ii in optimal_permutation:
-            mission = missions[ii]
-            print(f"Processing mission: {mission}")
-            dependency_data = [t[1] if pd.notna(t[1]) else '' for t in mission_data[mission]]
-            writer_dependency.writerow([mission] + dependency_data)
+            use_case = use_cases[ii]
+            print(f"Processing use_case: {use_case}")
+            dependency_data = [t[1] if pd.notna(t[1]) else '' for t in use_case_data[use_case]]
+            writer_dependency.writerow([use_case] + dependency_data)
 
 # =============================================================================
 # Main Execution
@@ -287,23 +287,23 @@ def save_optimized_files(optimal_permutation, mission_data, missions, capabiliti
 
 def main():
     """
-    Main function to run the complete mission optimization process.
+    Main function to run the complete use_case optimization process.
     """
-    global mission_data, missions, capabilities, save_results
+    global use_case_data, use_cases, capabilities, save_results
 
     try:
         print("Loading and processing data...")
         # Load and process the data from the original CSV files
-        mission_data, missions, capabilities = load_and_merge_data('Roadmap-readiness.csv', 'Roadmap-dependency.csv')
+        use_case_data, use_cases, capabilities = load_and_merge_data('Roadmap-readiness.csv', 'Roadmap-dependency.csv')
 
         print("Generating simplified CSV files...")
         # Generate the new simplified CSV files
-        generate_simplified_csvs(mission_data, missions, capabilities)
+        generate_simplified_csvs(use_case_data, use_cases, capabilities)
         print("Successfully generated 'simplified_readiness.csv' and 'simplified_dependency.csv'")
 
-        print("\nOptimizing mission order...")
+        print("\nOptimizing use_case order...")
         # Differential Evolution Solver
-        vector_length = len(missions)  # Use actual number of missions
+        vector_length = len(use_cases)  # Use actual number of use_cases
 
         # Define bounds for the N-dimensional search space. [0, 1] for each dimension is fine.
         bounds = [(0, 1)] * vector_length
@@ -323,7 +323,7 @@ def main():
         cost_function(optimal_permutation)
 
         # Save the optimized files
-        save_optimized_files(optimal_permutation, mission_data, missions, capabilities, file_prefix)
+        save_optimized_files(optimal_permutation, use_case_data, use_cases, capabilities, file_prefix)
 
         print("\nOptimization complete!")
         print(f"Results saved with prefix: '{file_prefix}'")

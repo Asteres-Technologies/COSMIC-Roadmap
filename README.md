@@ -3,10 +3,10 @@ Python code to generate potential roadmaps and development paths for self-sustai
 
 ## 🎯 Purpose
 
-The COSMIC-Roadmap tool analyzes the relationship between mission requirements and technological capabilities for space-based manufacturing and assembly operations. It combines dependency analysis (how critical each capability is for a mission) with readiness assessment (how mature each technology is) to provide insights for strategic planning.
+The COSMIC-Roadmap tool analyzes the relationship between use_case requirements and technological capabilities for space-based manufacturing and assembly operations. It combines dependency analysis (how critical each capability is for a use case) with readiness assessment (how mature each technology is) to provide insights for strategic planning.
 
 ### Key Features:
-- **Mission-Capability Analysis**: Maps capabilities to missions with dependency levels
+- **Use Case-Capability Analysis**: Maps capabilities to use cases with dependency levels
 - **Technology Readiness Assessment**: Tracks maturity levels for each capability
 - **Multiple Visualization Formats**: Clean, readable outputs for different use cases
 - **Data Integration**: Combines multiple CSV data sources into unified analysis
@@ -81,7 +81,7 @@ Place your CSV files in the `data/raw/` directory:
 - `Roadmap-readiness.csv` - Contains readiness data (technology maturity levels)
 
 Both files should have:
-- **Headers in the 3rd row** (mission names)
+- **Headers in the 3rd row** (use case names)
 - **First column** containing capability names
 - **Data values** in the corresponding cells
 
@@ -93,22 +93,22 @@ The tool provides multiple output formats to suit different analysis needs:
 ```bash
 python roadmap.py
 ```
-**Purpose**: Quick overview of first mission for verification
+**Purpose**: Quick overview of first use case for verification
 **Example Output**:
 ```
 ================================================================================
 📊 COSMIC ROADMAP DATA - SAMPLE
 ================================================================================
 
-🎯 Mission: Delivery of satellite from launch vehicle upper stage to final intended orbit
+🎯 Use Case: Delivery of satellite from launch vehicle upper stage to final intended orbit
 --------------------------------------------------------------------------------
 
 🔧 Inspection and Metrology
-   └─ Dependency:  1.0 - Mission Critical
+   └─ Dependency:  1.0 - Use Case Critical
    └─ Readiness:   13 - Sustainable System
 
 🔧 Relocation
-   └─ Dependency:  1.0 - Mission Critical
+   └─ Dependency:  1.0 - Use Case Critical
    └─ Readiness:   7 - System Demonstration
 ```
 
@@ -116,27 +116,27 @@ python roadmap.py
 ```bash
 python roadmap.py --full
 ```
-**Purpose**: View all missions and capabilities with detailed formatting
+**Purpose**: View all use cases and capabilities with detailed formatting
 **Example Output**:
 ```
 ====================================================================================================
 📊 COSMIC ROADMAP DATA - COMPLETE ANALYSIS
 ====================================================================================================
 
-🎯 Mission 1: Delivery of satellite from launch vehicle upper stage to final intended orbit
+🎯 Use Case 1: Delivery of satellite from launch vehicle upper stage to final intended orbit
 ----------------------------------------------------------------------------------------------------
 
   🔧 Inspection and Metrology
-     └─ Dependency:  1.0 - Mission Critical
+     └─ Dependency:  1.0 - Use Case Critical
      └─ Readiness:   13 - Sustainable System
 
   🔧 Relocation
-     └─ Dependency:  1.0 - Mission Critical
+     └─ Dependency:  1.0 - Use Case Critical
      └─ Readiness:   7 - System Demonstration
 
 ────────────────────────────────────────────────────────────────────────────────────────────────
 
-🎯 Mission 2: Manufacturing of Spare Parts
+🎯 Use Case 2: Manufacturing of Spare Parts
 ----------------------------------------------------------------------------------------------------
 ...
 ```
@@ -153,15 +153,15 @@ python roadmap.py --table
 ========================================================================================================================
 CAPABILITY                                   DEPENDENCY                          READINESS                          
 ------------------------------------------------------------------------------------------------------------------------
-Inspection and Metrology                     1.0 - Mission Critical             13 - Sustainable System           
-Relocation                                   1.0 - Mission Critical             7 - System Demonstration          
+Inspection and Metrology                     1.0 - Use Case Critical             13 - Sustainable System           
+Relocation                                   1.0 - Use Case Critical             7 - System Demonstration          
 ```
 
 #### 4. Summary Overview
 ```bash
 python roadmap.py --summary
 ```
-**Purpose**: High-level statistics and mission list
+**Purpose**: High-level statistics and use case list
 **Example Output**:
 ```
 ================================================================================
@@ -169,11 +169,11 @@ python roadmap.py --summary
 ================================================================================
 
 📊 Overview:
-   └─ Total Missions: 24
+   └─ Total Use Cases: 24
    └─ Total Capabilities: 264
-   └─ Avg Capabilities per Mission: 11.0
+   └─ Avg Capabilities per Use Case: 11.0
 
-🎯 Missions:
+🎯 Use Cases:
     1. Delivery of satellite from launch vehicle upper stage to final intended orbit
        └─ 11 capabilities
     2. Manufacturing of Spare Parts
@@ -184,7 +184,7 @@ python roadmap.py --summary
 ```bash
 python roadmap.py --capabilities
 ```
-**Purpose**: Analysis of all capabilities across missions
+**Purpose**: Analysis of all capabilities across use cases
 **Example Output**:
 ```
 ====================================================================================================
@@ -195,9 +195,9 @@ python roadmap.py --capabilities
 
 🔧 All Capabilities:
     1. Inspection and Metrology
-       └─ Used in 24 mission(s)
+       └─ Used in 24 use case(s)
     2. Parts and Good Manufacture
-       └─ Used in 24 mission(s)
+       └─ Used in 24 use case(s)
 ```
 
 ### Custom File Paths
@@ -214,10 +214,10 @@ from src.data_processing.combine import create_combined_roadmap
 # Combine roadmap data
 roadmap_data = create_combined_roadmap('path/to/dependency.csv', 'path/to/readiness.csv')
 
-# Access data structure: {mission: {capability: (dependency, readiness)}}
-for mission, capabilities in roadmap_data.items():
+# Access data structure: {use case: {capability: (dependency, readiness)}}
+for use case, capabilities in roadmap_data.items():
     for capability, (dependency, readiness) in capabilities.items():
-        print(f"{mission}: {capability} -> {dependency}, {readiness}")
+        print(f"{use case}: {capability} -> {dependency}, {readiness}")
 ```
 
 ## 📊 Data Structure
@@ -225,7 +225,7 @@ for mission, capabilities in roadmap_data.items():
 The tool creates a nested dictionary structure:
 ```python
 {
-    "Mission Name": {
+    "Use Case Name": {
         "Capability Name": (dependency_value, readiness_value),
         ...
     },
@@ -233,7 +233,7 @@ The tool creates a nested dictionary structure:
 }
 ```
 
-- **dependency_value**: String indicating criticality (e.g., "1.0 - Mission Critical")
+- **dependency_value**: String indicating criticality (e.g., "1.0 - Use Case Critical")
 - **readiness_value**: String indicating maturity (e.g., "13 - Sustainable System")
 
 ## Development

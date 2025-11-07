@@ -23,34 +23,34 @@ def format_value(value) -> str:
 
 
 def print_roadmap_sample(roadmap_data: RoadmapData, 
-                        mission_key: Optional[str] = None) -> None:
+                        use_case_key: Optional[str] = None) -> None:
     """
     Prints a clean, formatted sample of the roadmap data for verification purposes.
 
     Args:
         roadmap_data (RoadmapData): The combined roadmap data structure.
-        mission_key (str, optional): Specific mission to print. If None, prints the first mission.
+        use_case_key (str, optional): Specific use_case to print. If None, prints the first use_case.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
-    if mission_key is None:
-        mission_key = list(roadmap_data.missions.keys())[0]
+    if use_case_key is None:
+        use_case_key = list(roadmap_data.use_cases.keys())[0]
     
-    if mission_key not in roadmap_data.missions:
-        print(f"❌ Mission '{mission_key}' not found in roadmap data.")
+    if use_case_key not in roadmap_data.use_cases:
+        print(f"❌ Use Case '{use_case_key}' not found in roadmap data.")
         return
 
     print("="*80)
     print("📊 COSMIC ROADMAP DATA - SAMPLE")
     print("="*80)
-    print(f"\n🎯 Mission: {mission_key}")
+    print(f"\n🎯 Use Case: {use_case_key}")
     print("-" * 80)
     
-    mission = roadmap_data.missions[mission_key]
+    use_case = roadmap_data.use_cases[use_case_key]
     
-    for capability, entry in mission.capabilities.items():
+    for capability, entry in use_case.capabilities.items():
         dep_str = format_value(entry.dependency)
         read_str = format_value(entry.readiness)
         
@@ -68,7 +68,7 @@ def print_full_roadmap(roadmap_data: RoadmapData) -> None:
     Args:
         roadmap_data (RoadmapData): The combined roadmap data structure.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
@@ -76,11 +76,11 @@ def print_full_roadmap(roadmap_data: RoadmapData) -> None:
     print("📊 COSMIC ROADMAP DATA - COMPLETE ANALYSIS")
     print("="*100)
     
-    for i, (mission_name, mission) in enumerate(roadmap_data.missions.items(), 1):
-        print(f"\n🎯 Mission {i}: {mission_name}")
+    for i, (use_case_name, use_case) in enumerate(roadmap_data.use_cases.items(), 1):
+        print(f"\n🎯 Use Case {i}: {use_case_name}")
         print("-" * 100)
         
-        for capability, entry in mission.capabilities.items():
+        for capability, entry in use_case.capabilities.items():
             dep_str = format_value(entry.dependency)
             read_str = format_value(entry.readiness)
             
@@ -88,42 +88,42 @@ def print_full_roadmap(roadmap_data: RoadmapData) -> None:
             print(f"     └─ Dependency:  {dep_str}")
             print(f"     └─ Readiness:   {read_str}")
         
-        if i < len(roadmap_data.missions):
+        if i < len(roadmap_data.use_cases):
             print("\n" + "─" * 100)
     
     print("\n" + "="*100)
 
 
 def print_roadmap_table(roadmap_data: RoadmapData, 
-                       mission_key: Optional[str] = None) -> None:
+                       use_case_key: Optional[str] = None) -> None:
     """
     Prints roadmap data in a clean table format.
 
     Args:
         roadmap_data (RoadmapData): The combined roadmap data structure.
-        mission_key (str, optional): Specific mission to print. If None, prints the first mission.
+        use_case_key (str, optional): Specific use_case to print. If None, prints the first use_case.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
-    if mission_key is None:
-        mission_key = list(roadmap_data.missions.keys())[0]
+    if use_case_key is None:
+        use_case_key = list(roadmap_data.use_cases.keys())[0]
     
-    if mission_key not in roadmap_data.missions:
-        print(f"❌ Mission '{mission_key}' not found in roadmap data.")
+    if use_case_key not in roadmap_data.use_cases:
+        print(f"❌ Use Case '{use_case_key}' not found in roadmap data.")
         return
 
-    mission = roadmap_data.missions[mission_key]
+    use_case = roadmap_data.use_cases[use_case_key]
     
     print("="*120)
-    print(f"📊 ROADMAP TABLE: {mission_key}")
+    print(f"📊 ROADMAP TABLE: {use_case_key}")
     print("="*120)
     
     print(f"{'CAPABILITY':<45} {'DEPENDENCY':<35} {'READINESS':<35}")
     print("-" * 120)
     
-    for capability, entry in mission.capabilities.items():
+    for capability, entry in use_case.capabilities.items():
         dep_str = format_value(entry.dependency)[:33]
         read_str = format_value(entry.readiness)[:33]
         
@@ -139,7 +139,7 @@ def print_roadmap_summary(roadmap_data: RoadmapData) -> None:
     Args:
         roadmap_data (RoadmapData): The combined roadmap data structure.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
@@ -147,19 +147,19 @@ def print_roadmap_summary(roadmap_data: RoadmapData) -> None:
     print("📈 COSMIC ROADMAP SUMMARY")
     print("="*80)
     
-    total_missions = roadmap_data.get_mission_count()
+    total_use_cases = roadmap_data.get_use_case_count()
     total_capabilities = roadmap_data.get_total_capability_entries()
-    avg_capabilities = roadmap_data.get_average_capabilities_per_mission()
+    avg_capabilities = roadmap_data.get_average_capabilities_per_use_case()
     
     print(f"\n📊 Overview:")
-    print(f"   └─ Total Missions: {total_missions}")
+    print(f"   └─ Total Use Cases: {total_use_cases}")
     print(f"   └─ Total Capabilities: {total_capabilities}")
-    print(f"   └─ Avg Capabilities per Mission: {avg_capabilities:.1f}")
+    print(f"   └─ Avg Capabilities per Use Case: {avg_capabilities:.1f}")
     
-    print(f"\n🎯 Missions:")
-    for i, (mission_name, mission) in enumerate(roadmap_data.missions.items(), 1):
-        capability_count = mission.get_capability_count()
-        print(f"   {i:2d}. {mission_name[:70]}{'...' if len(mission_name) > 70 else ''}")
+    print(f"\n🎯 Use Cases:")
+    for i, (use_case_name, use_case) in enumerate(roadmap_data.use_cases.items(), 1):
+        capability_count = use_case.get_capability_count()
+        print(f"   {i:2d}. {use_case_name[:70]}{'...' if len(use_case_name) > 70 else ''}")
         print(f"       └─ {capability_count} capabilities")
     
     print("\n" + "="*80)
@@ -167,12 +167,12 @@ def print_roadmap_summary(roadmap_data: RoadmapData) -> None:
 
 def print_capabilities_analysis(roadmap_data: RoadmapData) -> None:
     """
-    Prints an analysis of capabilities across all missions.
+    Prints an analysis of capabilities across all use_cases.
 
     Args:
         roadmap_data (RoadmapData): The combined roadmap data structure.
     """
-    if not roadmap_data.missions:
+    if not roadmap_data.use_cases:
         print("❌ No roadmap data available to display.")
         return
 
@@ -189,6 +189,6 @@ def print_capabilities_analysis(roadmap_data: RoadmapData) -> None:
     for i, capability in enumerate(all_capabilities, 1):
         usage_count = usage_stats.get(capability, 0)
         print(f"   {i:2d}. {capability}")
-        print(f"       └─ Used in {usage_count} mission(s)")
+        print(f"       └─ Used in {usage_count} use_case(s)")
     
     print("\n" + "="*100)
