@@ -60,6 +60,7 @@ class Use_Case(BaseModel):
     Represents a use_case with its associated capabilities.
     """
     name: str
+    contributor: Optional[str] = None
     capabilities: Dict[str, RoadmapEntry]
     
     def get_critical_capabilities(self) -> List[str]:
@@ -88,12 +89,13 @@ class RoadmapData(BaseModel):
     use_cases: Dict[str, Use_Case]
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Dict[str, Any]]) -> "RoadmapData":
+    def from_dict(cls, data: Dict[str, Dict[str, Any]], contributors: Optional[Dict[str, str]] = None) -> "RoadmapData":
         """
         Create RoadmapData from the legacy dictionary format.
         
         Args:
             data: Dictionary in format {use_case: {capability: (dependency, readiness)}}
+            contributors: Optional dictionary mapping use_case names to contributor names
             
         Returns:
             RoadmapData instance
@@ -106,8 +108,10 @@ class RoadmapData(BaseModel):
                     dependency=dependency,
                     readiness=readiness
                 )
+            contributor = contributors.get(use_case_name) if contributors else None
             use_cases[use_case_name] = Use_Case(
                 name=use_case_name,
+                contributor=contributor,
                 capabilities=capabilities
             )
         return cls(use_cases=use_cases)

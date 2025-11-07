@@ -147,20 +147,18 @@ def print_roadmap_summary(roadmap_data: RoadmapData) -> None:
     print("📈 COSMIC ROADMAP SUMMARY")
     print("="*80)
     
-    total_use_cases = roadmap_data.get_use_case_count()
-    total_capabilities = roadmap_data.get_total_capability_entries()
-    avg_capabilities = roadmap_data.get_average_capabilities_per_use_case()
+    # Get all capabilities across use cases
+    all_capabilities = roadmap_data.get_all_capabilities()
     
-    print(f"\n📊 Overview:")
-    print(f"   └─ Total Use Cases: {total_use_cases}")
-    print(f"   └─ Total Capabilities: {total_capabilities}")
-    print(f"   └─ Avg Capabilities per Use Case: {avg_capabilities:.1f}")
-    
-    print(f"\n🎯 Use Cases:")
+    print(f"\n📊 Use Cases and Contributors:")
     for i, (use_case_name, use_case) in enumerate(roadmap_data.use_cases.items(), 1):
-        capability_count = use_case.get_capability_count()
-        print(f"   {i:2d}. {use_case_name[:70]}{'...' if len(use_case_name) > 70 else ''}")
-        print(f"       └─ {capability_count} capabilities")
+        contributor = use_case.contributor or 'TBD'
+        print(f"   {i:2d}. {use_case_name}")
+        print(f"       └─ Contributor: {contributor}")
+    
+    print(f"\n🔧 Capabilities ({len(all_capabilities)} total):")
+    for i, capability in enumerate(all_capabilities, 1):
+        print(f"   {i:2d}. {capability}")
     
     print("\n" + "="*80)
 

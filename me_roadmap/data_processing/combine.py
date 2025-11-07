@@ -34,26 +34,40 @@ def clean_value(value):
     return np.nan
 
 
-def load_csv_files(dependency_file: str, readiness_file: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_csv_files(dependency_file: str, readiness_file: str) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, str]]:
     """
-    Loads dependency and readiness CSV files into DataFrames.
+    Loads dependency and readiness CSV files into DataFrames and extracts contributor information.
     
     Args:
         dependency_file (str): The file path for the dependency CSV.
         readiness_file (str): The file path for the readiness CSV.
         
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: Dependency and readiness DataFrames.
+        Tuple[pd.DataFrame, pd.DataFrame, Dict[str, str]]: Dependency and readiness DataFrames, plus contributor mapping.
         
     Raises:
         FileNotFoundError: If either CSV file cannot be found.
         Exception: If there's an error reading the CSV files.
     """
     try:
+        # Read the first row to get contributor information
+        contributors_df = pd.read_csv(dependency_file, nrows=1, header=None)
+        contributors = {}
+        
+        # Extract contributors from the first row (skip first column which is "Assignments --->")
+        if len(contributors_df.columns) > 1:
+            use_case_headers_df = pd.read_csv(dependency_file, skiprows=2, nrows=1, header=None)
+            for i in range(1, min(len(contributors_df.columns), len(use_case_headers_df.columns))):
+                if pd.notna(contributors_df.iloc[0, i]) and pd.notna(use_case_headers_df.iloc[0, i]):
+                    use_case_name = str(use_case_headers_df.iloc[0, i]).strip()
+                    contributor_name = str(contributors_df.iloc[0, i]).strip()
+                    contributors[use_case_name] = contributor_name
+        
+        # Load the main dataframes
         dependency_df = pd.read_csv(dependency_file, header=2, index_col=0)
         readiness_df = pd.read_csv(readiness_file, header=2, index_col=0)
         print(f"✅ Successfully loaded CSV files: {dependency_file}, {readiness_file}")
-        return dependency_df, readiness_df
+        return dependency_df, readiness_df, contributors
     except FileNotFoundError as e:
         print(f"❌ Error: {e}. Please make sure the CSV files are in the correct location.")
         raise
@@ -241,7 +255,7 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str,
                     Returns empty RoadmapData if processing fails.
     """
     try:
-        dependency_df, readiness_df = load_csv_files(dependency_file, readiness_file)
+        dependency_df, readiness_df, contributors = load_csv_files(dependency_file, readiness_file)
         dependency_df, readiness_df = clean_dataframes(dependency_df, readiness_df, apply_value_cleaning)
         
         if show_summary:
@@ -253,7 +267,7 @@ def create_combined_roadmap(dependency_file: str, readiness_file: str,
             generate_simplified_csvs(dependency_df, readiness_df)
         
         combined_dict = build_combined_structure(dependency_df, readiness_df)
-        roadmap_data = RoadmapData.from_dict(combined_dict)
+        roadmap_data = RoadmapData.from_dict(combined_dict, contributors)
         
         print(f"✅ Successfully created roadmap with {roadmap_data.get_use_case_count()} use_cases and {len(roadmap_data.get_all_capabilities())} capabilities")
         return roadmap_data
