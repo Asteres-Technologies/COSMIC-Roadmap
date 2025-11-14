@@ -252,3 +252,5 @@ credentials.*
 plots/
 figures/
 charts/
+
+.~lock* #Lock files for OpenOffice
